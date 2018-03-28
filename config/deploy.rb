@@ -11,10 +11,12 @@ require 'mina/rbenv'  # for rbenv support. (https://rbenv.org)
 #   repository   - Git repo to clone from. (needed by mina/git)
 #   branch       - Branch name to deploy. (needed by mina/git)
 set :application_name, 'liked'
-set :domain, '172.28.128.6'
+set :domain, '172.28.128.9'
 set :deploy_to, '/var/apps/liked'
 set :repository, 'https://github.com/jerryhsieh/ruby-cucumber.git'
 set :branch, 'master'
+set :unicorn_conf, 'config/unicorn.rb'
+
 
 # Optional settings:
 #   set :user, 'foobar'          # Username in the server to SSH to.
@@ -24,7 +26,7 @@ set :branch, 'master'
 set :user, 'liked'
 set :forward_agent, true
 set :identity_file, '/Users/jerryhsieh/.ssh/id_rsa'
-set :rbenv_path, '/home/vagrant/.rbenv/bin'
+set :rbenv_path, '/usr/local/rbenv'
 
 
 # Shared dirs and files will be symlinked into the app-folder by the 'deploy:link_shared_paths' step.
@@ -36,7 +38,7 @@ set :rbenv_path, '/home/vagrant/.rbenv/bin'
 # This task is the environment that is loaded for all remote run commands, such as
 # `mina deploy` or `mina rake`.
 task :remote_environment do
-  # If you're using rbenv, use this to load the rbenv environment.
+ # If you're using rbenv, use this to load the rbenv environment.
   # Be sure to commit your .ruby-version or .rbenv-version to your repository.
   # invoke :'rbenv:load'
 
@@ -44,6 +46,7 @@ task :remote_environment do
   # invoke :'rvm:use', 'ruby-1.9.3-p125@default'
   invoke :'rbenv:load'
   #command "export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH"
+  command %[ export PATH="$PATH:$HOME/.rbenv/bin:$HOME/.rbenv/shims" ]
 end
 
 # Put any custom commands you need to run at setup
@@ -62,7 +65,7 @@ task :deploy => :remote_environment do
     # Put things that will set up an empty directory into a fully set-up
     # instance of your project.
     invoke :'git:clone'
-    #invoke :'deploy:link_shared_paths'
+    invoke :'deploy:link_shared_paths'
     invoke :'bundle:install'
     #invoke :'rails:db_migrate'
     #invoke :'rails:assets_precompile'
@@ -79,6 +82,21 @@ task :deploy => :remote_environment do
   # you can use `run :local` to run tasks on local machine before of after the deploy scripts
   # run(:local){ say 'done' }
 end
+
+desc "start web server using shotgun"
+task :start => :remote_environment do
+  command "cd #{fetch(:deploy_to)}/current && bundle exec unicorn -c #{fetch(:unicorn_conf)} -E development -D "
+end
+
+task :restart => :remote_environment do
+  command "if [ -f #{unicorn_pid}]; then kill -USR2 'cat #{unicorn_pid}'; else cd #{deploy_to}/current && bundle exec unicorn -c #{unicorn_fonc} -E #{env} -D; fi "
+end
+
+
+task :stop => :remote_environment do
+  command "if [-f #{unicorn_pid }]; then kill -QUIT 'cat #{unicorn_pid}'; fi"
+end
+
 
 # For help in making your deploy script, see the Mina documentation:
 #
