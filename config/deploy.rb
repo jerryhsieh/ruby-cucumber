@@ -96,7 +96,7 @@ task :start => :remote_environment do
 end
 
 task :restart => :remote_environment do
-  command "if [ -f #{fetch(:unicorn_pid)}]; then kill -USR2 'cat #{fetch(:unicorn_pid)}'; else cd #{fetch(:current_path)} && bundle exec unicorn -c #{fetch(:current_path)}/#{fetch(:unicorn_conf)} -E #{env} -D; fi "
+  command "if [ -f #{fetch(:unicorn_pid)}]; then kill -USR2 'cat #{fetch(:unicorn_pid)}'; else cd #{fetch(:current_path)} && bundle exec unicorn -c #{fetch(:current_path)}/#{fetch(:unicorn_conf)} -E #{fetch(:env)} -D; fi "
 end
 
 
