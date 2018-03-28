@@ -33,7 +33,9 @@ set :rbenv_path, '/usr/local/rbenv'
 # Some plugins already add folders to shared_dirs like `mina/rails` add `public/assets`, `vendor/bundle` and many more
 # run `mina -d` to see all folders and files already included in `shared_dirs` and `shared_files`
 # set :shared_dirs, fetch(:shared_dirs, []).push('public/assets')
-# set :shared_files, fetch(:shared_files, []).push('config/database.yml', 'config/secrets.yml')
+#set :shared_files, fetch(:shared_files, []).push('config/database.yml', 'config/secrets.yml')
+set :shared_dirs, fetch(:shared_dirs, []).push('public/assets')
+set :shared_files, fetch(:shared_files, []).push('config/unicorn.rb')
 
 # This task is the environment that is loaded for all remote run commands, such as
 # `mina deploy` or `mina rake`.
@@ -46,15 +48,15 @@ task :remote_environment do
   # invoke :'rvm:use', 'ruby-1.9.3-p125@default'
   invoke :'rbenv:load'
   #command "export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH"
-  command %[ export PATH="$PATH:$HOME/.rbenv/bin:$HOME/.rbenv/shims" ]
+  command %[ export PATH="$PATH:/usr/local/rbenv/bin:usr/local/rbenv/shims" ]
 end
 
 # Put any custom commands you need to run at setup
 # All paths in `shared_dirs` and `shared_paths` will be created on their own.
 task :setup => :remote_environment  do
   # command %{rbenv install 2.3.0 --skip-existing}
-  command "mkdir -p #{fetch(:deploy_to)}/current/tmp/pids #{fetch(:deploy_to)}/current/tmp/sockets"
-  command "mkdir -p #{fetch(:deploy_to)}/current/log"
+  command "mkdir -p #{fetch(:deploy_to)}/work/tmp/pids #{fetch(:deploy_to)}/work/tmp/sockets"
+  command "mkdir -p #{fetch(:deploy_to)}/work/log"
 end
 
 desc "Deploys the current version to the server."
@@ -73,7 +75,8 @@ task :deploy => :remote_environment do
 
     on :launch do
       in_path(fetch(:current_path)) do
-        command %{mkdir -p tmp/}
+        command %{mkdir -p tmp/ tmp/pids tmp/sockets}
+        command %{mkdir -p log/}        
         command %{touch tmp/restart.txt}
       end
     end
@@ -85,11 +88,14 @@ end
 
 desc "start web server using shotgun"
 task :start => :remote_environment do
-  command "cd #{fetch(:deploy_to)}/current && bundle exec unicorn -c #{fetch(:unicorn_conf)} -E development -D "
+  in_path(fetch(:current_path)) do
+    command %{ls -al}
+    command "bundle exec unicorn -c #{fetch(:current_path)}/#{fetch(:unicorn_conf) } -E development -D "
+  end
 end
 
 task :restart => :remote_environment do
-  command "if [ -f #{unicorn_pid}]; then kill -USR2 'cat #{unicorn_pid}'; else cd #{deploy_to}/current && bundle exec unicorn -c #{unicorn_fonc} -E #{env} -D; fi "
+  command "if [ -f #{unicorn_pid}]; then kill -USR2 'cat #{unicorn_pid}'; else cd #{deploy_to}/current && bundle exec unicorn -c #{fetch(:deploy_to)}/#{fetch(:unicorn_conf)} -E #{env} -D; fi "
 end
 
 
