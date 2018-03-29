@@ -17,7 +17,7 @@ set :repository, 'https://github.com/jerryhsieh/ruby-cucumber.git'
 set :branch, 'master'
 set :unicorn_conf, 'config/unicorn.rb'
 set :unicorn_pid, '#{fetch(:deploy_to)}/tmp/pids/unicorn.pid'
-set :env, "development"
+set :env, 'development'
 
 # Optional settings:
 #   set :user, 'foobar'          # Username in the server to SSH to.
@@ -96,12 +96,12 @@ task :start => :remote_environment do
 end
 
 task :restart => :remote_environment do
-  command "if [ -f #{fetch(:unicorn_pid)}]; then kill -USR2 'cat #{fetch(:unicorn_pid)}'; else cd #{fetch(:current_path)} && bundle exec unicorn -c #{fetch(:current_path)}/#{fetch(:unicorn_conf)} -E #{fetch(:env)} -D; fi "
+  command "if [ -f #{fetch(:unicorn_pid)} ]; then kill -USR2 `cat #{fetch(:unicorn_pid)}`; else cd #{fetch(:current_path)} && bundle exec unicorn -c #{fetch(:current_path)}/#{fetch(:unicorn_conf)} -E #{fetch(:env)} -D; fi "
 end
 
 
 task :stop => :remote_environment do
-  command "if [-f #{fetch(:unicorn_pid) }]; then kill -QUIT 'cat #{fetch(:unicorn_pid)}'; fi"
+  command "if [ -f #{fetch(:unicorn_pid)} ]; then kill -QUIT `cat #{fetch(:unicorn_pid)}`; fi"
 end
 
 
